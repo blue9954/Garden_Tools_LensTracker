@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="lens-token" content="{{ token }}">
+  <title>LensTracker · 당신의 사진, 장비의 기록</title>
+  <link rel="icon" href="{{ url_for('static', filename='app.ico') }}" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/"><span class="brand-icon">◎</span><span>LensTracker<small>사진으로 남기는 장비의 가치</small></span></a>
+    <div class="nav-label">WORKSPACE</div>
+    <nav aria-label="주 메뉴">
+      <button class="nav-item active" data-view="overview"><span>▦</span> 개요 <i></i></button>
+      <button class="nav-item" data-view="equipment"><span>◎</span> 장비와 가격</button>
+      <button class="nav-item" data-view="photos"><span>▧</span> 사진 목록</button>
+      <button class="nav-item" data-view="import"><span>↥</span> 가져오기</button>
+      <button class="nav-item" data-view="csv"><span>▤</span> CSV 기록</button>
+    </nav>
+    <div class="sidebar-note"><span class="small-icon">◈</span><strong>사진은 그대로, 기록만 이곳에.</strong><p>원본을 수정하거나 업로드하지 않고<br>이 PC에서 메타데이터를 분석합니다.</p><button id="demo-button" class="text-button">예시 데이터 둘러보기 ↗</button></div>
+    <div class="local-status"><span class="status-dot"></span> 로컬 라이브러리 <small>{{ "Desktop " if desktop else "v" }}{{ version }}</small></div>
+  </aside>
+
+  <main>
+    <header class="topbar"><div class="breadcrumb">내 라이브러리 <span>/</span> <b id="breadcrumb-view">개요</b></div><span class="private-label"><span class="status-dot"></span> 내 PC에 안전하게 저장</span></header>
+    <div class="workspace">
+      <div id="demo-banner" class="notice demo-banner" hidden>예시 미리보기 · 화면의 사진과 가격은 가상 데이터입니다. <button id="exit-demo" class="text-button">내 라이브러리로 돌아가기 →</button></div>
+      <div class="page-heading"><div><div class="eyebrow">YOUR GEAR, IN FOCUS</div><h1 id="page-title">사진 속에 담긴 장비의 기록</h1><p id="page-subtitle">무엇으로, 얼마나 담았는지. 사진으로 알아보는 나의 장비 생활.</p></div><div class="heading-actions"><a id="export-button" class="button secondary" href="/api/export">↓ <span>CSV 내보내기</span></a><button class="button primary" data-import>＋ 사진 가져오기</button></div></div>
+
+      <form id="filters" class="filter-bar">
+        <span class="filter-title">촬영일</span><label class="sr-only" for="start">시작일</label><input type="date" id="start" name="start"><span class="date-divider">—</span><label class="sr-only" for="end">종료일</label><input type="date" id="end" name="end">
+        <span class="filter-separator"></span><label class="sr-only" for="camera-filter">카메라 필터</label><select id="camera-filter" name="camera"><option value="">모든 카메라</option></select><label class="sr-only" for="lens-filter">렌즈 필터</label><select id="lens-filter" name="lens"><option value="">모든 렌즈</option></select><button type="submit" class="button small">적용</button><button type="button" id="reset-filters" class="text-button">초기화</button>
+      </form>
+
+      <section id="view-overview" class="view">
+        <div class="section-caption"><span id="scope-label">전체 기간</span><span>중복 파일 제외 · 등록된 사진 기준</span></div>
+        <div id="summary" class="summary-grid"></div>
+        <div id="empty-state" class="empty-state" hidden><div class="empty-symbol">◎</div><h2>첫 번째 사진 기록을 시작해 보세요</h2><p>사진 폴더를 가져오면 카메라와 렌즈를 자동으로 정리합니다.<br>장비 가격을 입력하면 사진 한 장의 비용도 확인할 수 있어요.</p><button class="button primary" data-import>＋ 사진 폴더 가져오기</button><button id="empty-demo" class="text-button">먼저 예시 둘러보기 →</button></div>
+        <div id="analytics-content">
+          <div class="chart-grid"><article class="panel trend-panel"><div class="panel-heading"><div><h2>차곡차곡 쌓인 촬영 기록</h2><p>월별 촬영량</p></div><span id="trend-total" class="tag"></span></div><div id="monthly-chart" class="monthly-chart"></div></article><article class="panel insight-panel"><div class="eyebrow">A LITTLE PERSPECTIVE</div><div class="insight-orbit">◉</div><h2 id="insight-title">당신의 가장 든든한<br>촬영 파트너</h2><p id="insight-text"></p><div id="insight-stat" class="insight-stat"></div><span class="insight-foot">가장 많이 사용한 카메라 기준</span></article></div>
+          <div class="rank-grid"><article class="panel"><div class="panel-heading"><div><h2>자주 손이 간 카메라</h2><p>카메라별 촬영 순위 · 모든 카메라</p></div><span class="panel-icon">▣</span></div><div id="camera-chart" class="rank-chart"></div></article><article class="panel"><div class="panel-heading"><div><h2>나의 시선을 담은 렌즈</h2><p>렌즈별 촬영 순위 · 모든 렌즈</p></div><span class="panel-icon">◎</span></div><div id="lens-chart" class="rank-chart"></div></article></div>
+          <article class="panel combination-panel"><div class="panel-heading"><div><h2>함께할 때 더 자주 쓰는 조합</h2><p>카메라 + 렌즈별 촬영 수와 사진 한 장당 비용 · 상위 8개</p></div><span class="tag">CAMERA × LENS</span></div><div id="combination-chart"></div><p class="panel-footnote">조합 비용 = 두 장비의 신품 가격 합계 ÷ 해당 조합 촬영 수. 조합끼리 비용을 더하면 같은 장비가 중복됩니다.</p></article>
+          <div class="rank-grid"><article class="panel"><div class="panel-heading"><div><h2>좋아하는 초점거리</h2><p>렌즈에 기록된 실제 초점거리 · 환산값 아님</p></div></div><div id="focal-chart" class="rank-chart compact"></div></article><article class="panel"><div class="panel-heading"><div><h2>기록의 완성도</h2><p>누락 정보와 가격 입력 현황</p></div></div><div id="quality"></div><p class="panel-footnote">메타데이터가 없는 사진도 촬영 수에 포함합니다. 날짜 필터 사용 시 촬영일 미상 사진은 제외합니다.</p></article></div>
+        </div>
+        <p class="bottom-note">사진당 비용은 등록된 사진에 장비 가격을 나눈 참고 지표입니다. 실제 지출·감가상각·셔터 작동 횟수와 다를 수 있습니다.</p>
+      </section>
+
+      <section id="view-equipment" class="view" hidden><div class="notice">가격과 장비별 단가는 <b>전체 라이브러리</b> 기준입니다. 같은 모델은 하나의 장비로 집계합니다. 가격이 없으면 계산에서 제외하며, 0원은 직접 입력한 경우에만 적용합니다.</div><div class="panel"><div class="panel-heading"><div><h2>내 장비 목록</h2><p>신품 가격을 입력하고, 사진으로 쌓인 사용 가치를 확인하세요.</p></div><span class="tag">KRW · 원</span></div><div class="table-scroll"><table><thead><tr><th scope="col" aria-sort="ascending"><button type="button" class="equipment-sort" data-equipment-sort="name">장비<span class="sort-indicator" aria-hidden="true">▲</span></button></th><th scope="col" aria-sort="none"><button type="button" class="equipment-sort" data-equipment-sort="count">촬영 수<span class="sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" class="equipment-sort" data-equipment-sort="new_price">신품 가격<span class="sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" class="equipment-sort" data-equipment-sort="cost">신품 기준 / 장<span class="sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col">관리</th></tr></thead><tbody id="equipment-body"></tbody></table></div></div></section>
+
+      <section id="view-photos" class="view" hidden><div class="panel"><div class="panel-heading"><div><h2>사진 기록</h2><p>원본을 열지 않고 메타데이터만 확인합니다. RAW+JPEG는 각각 집계됩니다.</p></div><span id="photo-count" class="tag"></span></div><div class="table-scroll"><table><thead><tr><th>파일명 / 촬영일</th><th>카메라</th><th>렌즈</th><th>촬영 설정</th><th>형식</th></tr></thead><tbody id="photos-body"></tbody></table></div><div class="pagination"><button class="button secondary small" id="prev-page">← 이전</button><span id="page-label"></span><button class="button secondary small" id="next-page">다음 →</button></div></div></section>
+
+      <section id="view-import" class="view" hidden>
+        <div class="import-grid">
+          <article class="panel">
+            <div class="panel-heading"><div><h2>사진 폴더 가져오기</h2><p>열었던 폴더를 선택하거나 새 경로를 입력하세요. 하위 폴더도 함께 확인합니다.</p></div><span class="panel-icon">↥</span></div>
+            <form id="import-form">
+              <label for="saved-folders">열었던 폴더</label>
+              <select id="saved-folders" aria-describedby="saved-folders-help" disabled><option value="">저장된 폴더 확인 중…</option></select>
+              <p id="saved-folders-help" class="field-help">최근에 연 폴더부터 표시합니다. 폴더를 선택한 뒤 확인을 시작하면 새 사진과 변경된 사진을 가져옵니다.</p>
+              {% if desktop %}<button id="choose-folder" class="button secondary" type="button">폴더 찾아보기…</button>{% endif %}
+              <label for="folder">폴더 경로</label><input id="folder" name="folder" type="text" placeholder="예: D:\Photos\2026" required autocomplete="off" aria-describedby="folder-help">
+              <p id="folder-help" class="field-help">탐색기의 주소 표시줄에서 폴더 경로를 복사해 붙여넣을 수도 있습니다.</p>
+              <button id="scan-button" class="button primary" type="submit">폴더 확인 시작 →</button>
+            </form>
+            <div class="import-rules">
+              <p><span>✓</span> 메타데이터와 열었던 폴더는 자동으로 저장됩니다.</p>
+              <p><span>✓</span> 앱을 다시 열면 저장된 기록을 바로 불러옵니다.</p>
+              <p><span>✓</span> 이미 읽은 사진은 변경이 없으면 다시 읽지 않습니다.</p>
+              <p><span>✓</span> 동일한 내용의 파일은 한 번만 집계합니다.</p>
+              <p id="metadata-location" class="storage-location" hidden></p>
+            </div>
+          </article>
+          <article class="panel"><div class="panel-heading"><div><h2>지원 형식</h2><p>현재 PC의 메타데이터 읽기 환경</p></div></div><div class="format-group"><strong>기본 지원</strong><p>JPEG · TIFF · PNG · WebP</p></div><div class="format-group"><strong>ExifTool 확장 지원</strong><p>HEIC · DNG · CR2/CR3 · NEF · ARW<br>RAF · RW2 · ORF · PEF · SRW · NRW</p><span id="exiftool-status" class="tag">확인 중</span></div><p class="panel-footnote">ExifTool을 PATH에 등록하거나 tools/exiftool.exe로 설치하면 자동 인식합니다. 필요한 함께 배포된 파일도 유지하세요.</p></article>
+        </div>
+        <article class="panel scan-panel"><div class="panel-heading"><div><h2>가져오기 상태</h2><p id="scan-description">폴더를 선택해 새 사진이나 변경된 사진을 확인하세요.</p></div><button id="cancel-scan" class="button secondary small" hidden>가져오기 취소</button></div><div id="scan-progress" class="scan-progress" hidden><span></span></div><div id="scan-counts" class="scan-counts"></div><div id="scan-current" class="path-label"></div><details id="scan-errors" hidden><summary>읽지 못한 파일 확인 · 최근 100개</summary><ul id="error-list"></ul></details></article>
+      </section>
+      <section id="view-csv" class="view" hidden>
+        <div class="notice">CSV의 장비·조합별 통계를 저장합니다. 사진별 촬영일·EXIF 정보는 이 파일에 포함되지 않습니다.</div>
+        <div id="csv-demo-note" class="notice demo-banner" hidden>예시 미리보기 중에는 CSV를 가져올 수 없습니다. 아래에는 직접 저장한 CSV 기록이 표시됩니다.<button id="csv-exit-demo" class="text-button" type="button">내 라이브러리로 돌아가기 →</button></div>
+        <div class="import-grid">
+          <article class="panel">
+            <div class="panel-heading"><div><h2>CSV 기록 가져오기</h2><p>LensTracker에서 내보낸 통계 파일을 선택하세요.</p></div><span class="panel-icon">▤</span></div>
+            <form id="csv-import-form">
+              {% if desktop %}<button id="choose-csv" class="button secondary" type="button">CSV 파일 찾아보기…</button>{% endif %}
+              <label for="csv-path">CSV 파일 경로</label><input id="csv-path" name="path" type="text" placeholder="예: D:\Photos\lenstracker-stats.csv" required autocomplete="off" aria-describedby="csv-path-help">
+              <p id="csv-path-help" class="field-help">파일 경로를 붙여넣어도 됩니다. 같은 내용의 CSV는 기존 기록을 불러옵니다.</p>
+              <button id="csv-import-button" class="button primary" type="submit">CSV 기록 저장 →</button>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-heading"><div><h2>저장한 CSV</h2><p>가져온 시점의 통계를 다시 확인하세요.</p></div></div>
+            <label for="csv-history">CSV 기록 선택</label><select id="csv-history" disabled aria-describedby="csv-history-help"><option value="">저장된 CSV 기록 확인 중…</option></select>
+            <p id="csv-history-help" class="field-help">저장한 순서대로 표시합니다. 앱을 다시 열어도 기록이 유지됩니다.</p>
+            <p class="panel-footnote">각 파일의 통계는 CSV 기록에서 확인할 수 있습니다. 사진 폴더에서 가져온 라이브러리는 개요에서 확인하세요.</p>
+          </article>
+        </div>
+        <div id="csv-empty" class="empty-state"><div class="empty-symbol">▤</div><h2>CSV로 남겨 둔 기록을 모아 보세요</h2><p id="csv-empty-text">CSV 파일을 가져오면 저장한 통계를 여기에서 확인할 수 있습니다.</p></div>
+        <article id="csv-snapshot" class="panel" hidden>
+          <div class="panel-heading"><div><h2 id="csv-snapshot-title"></h2><p>CSV에 저장된 전체 카메라·렌즈·조합 항목</p></div><span id="csv-row-count" class="tag"></span></div>
+          <dl class="csv-source"><dt>가져온 파일</dt><dd id="csv-source-path"></dd><dt>가져온 시각</dt><dd id="csv-imported-at"></dd></dl>
+          <div id="csv-summary" class="csv-summary"></div>
+          <div class="table-scroll"><table class="csv-table"><thead><tr><th scope="col">구분</th><th scope="col">장비 / 조합</th><th scope="col">촬영 수</th><th scope="col">비율</th><th scope="col">신품 가격</th><th scope="col">사진당 비용</th></tr></thead><tbody id="csv-records-body"></tbody></table></div>
+          <p class="panel-footnote">카메라·렌즈·조합은 같은 사진을 각각 집계하므로 구분별 촬영 수를 더하지 않습니다. 가격과 비용은 CSV에 기록된 값을 표시합니다.</p>
+        </article>
+      </section>
+      <footer><span>LensTracker</span><span>당신의 장비 이야기는 사진 속에 있습니다.</span></footer>
+    </div>
+  </main>
+  <dialog id="equipment-dialog"><form id="equipment-form"><div class="dialog-heading"><div><div class="eyebrow">GEAR DETAILS</div><h2>장비 정보와 가격</h2></div><button type="button" id="close-dialog" class="icon-button" aria-label="닫기">×</button></div><input id="equipment-id" type="hidden"><label for="equipment-name">표시 이름</label><input id="equipment-name" maxlength="300" required><p id="original-model" class="field-help"></p><div class="price-fields"><div><label for="new-price">신품 가격 (원)</label><input id="new-price" type="number" min="0" max="100000000000" step="1" placeholder="미입력"></div><div><label for="purchase-price">실구매 가격 (선택)</label><input id="purchase-price" type="number" min="0" max="100000000000" step="1" placeholder="미입력"></div></div><label for="equipment-note">가격 출처 / 메모</label><textarea id="equipment-note" rows="3" maxlength="1000" placeholder="예: 공식 판매처, 2026-09-12 확인"></textarea><p class="field-help">이름과 가격은 이 앱에만 저장됩니다. 사진 원본의 EXIF는 그대로 유지됩니다.</p><button type="submit" class="button primary full">변경 사항 저장</button></form></dialog>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
