@@ -1,3 +1,7 @@
+<img width="920" height="694" alt="image" src="https://github.com/user-attachments/assets/8bcb64de-ef8d-437d-9f03-c5fcf14082e2" />
+
+사진 EXIF로 카메라·렌즈·조합별 사용량과 사진당 장비 비용을 분석하는 한국어 Windows 독립 앱입니다. [작업 명세서](SPEC.md)에 계산 규칙과 구현 범위가 있습니다.
+
 # LensTracker 1.2.0
 
 같은 렌즈의 EXIF 표기 차이(제조사 접두어, 공백, 조리개 슬래시, Sigma Art 표기)는 자동으로 통합합니다. 기존 사진 연결과 메모를 보존하며 렌즈·카메라 조합 통계 및 사진당 비용도 합쳐 계산합니다. 세대·조리개·모델이 다른 렌즈는 구분합니다.
@@ -6,7 +10,7 @@
 
 릴리스: **1.2.0 · 2026-09-12**. 버전별 변경 사항은 [변경 이력](CHANGELOG.md)을 확인하세요.
 
-사진 EXIF로 카메라·렌즈·조합별 사용량과 사진당 장비 비용을 분석하는 한국어 Windows 독립 앱입니다. [작업 명세서](SPEC.md)에 계산 규칙과 구현 범위가 있습니다.
+
 
 **독립 앱 실행: 프로젝트 폴더의 `Garden_Tools_LensTracker.exe`를 더블클릭하세요.** 지정한 `icon.png` 아이콘이 적용된 실행 파일이며, `dist\LensTracker\LensTracker.exe`를 열어 자체 창으로 실행합니다. 프로젝트의 `dist` 폴더를 함께 유지하세요. Python이나 브라우저 설치가 필요하지 않습니다. `start.cmd`와 `start.ps1`도 이 실행 파일을 우선 사용합니다. 다른 PC에는 `dist\LensTracker-1.2.0-Windows-x64.zip`을 전달하고 전체 압축을 풀어 사용합니다. `dist\LensTracker-Windows-x64.zip`도 같은 최신 배포본입니다. 자세한 실행·데이터 이전·재빌드 안내는 [DESKTOP.md](DESKTOP.md)를 확인하세요.
 
