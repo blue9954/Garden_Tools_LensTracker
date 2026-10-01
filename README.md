@@ -1,4 +1,5 @@
-<img width="920" height="694" alt="image" src="https://github.com/user-attachments/assets/8bcb64de-ef8d-437d-9f03-c5fcf14082e2" />
+<img width="1924" height="1511" alt="image" src="https://github.com/user-attachments/assets/11778b0f-88cc-4cd1-bdd1-abfc66ad1e78" />
+
 
 사진 EXIF로 카메라·렌즈·조합별 사용량과 사진당 장비 비용을 분석하는 한국어 Windows 독립 앱입니다. [작업 명세서](SPEC.md)에 계산 규칙과 구현 범위가 있습니다.
 
